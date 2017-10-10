@@ -88,7 +88,7 @@ case "$command" in
     DividerSuffix "$subcommand $@"
 
     if [ "$STACK" = "" ]; then
-      stack_name=$(cat kontena.yml | grep "^stack:" | rev | cut -d' ' -f1 | rev)
+      stack_name=$(cat kontena.yml | grep "^stack:" | rev | cut -d' ' -f1 | rev | sed 's/\//-/g')
     else
       stack_name=$STACK
     fi
