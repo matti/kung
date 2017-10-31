@@ -367,14 +367,11 @@ case "$command" in
 
         docker-compose $compose_opts up --no-deps --force-recreate -t 0 --remove-orphans -d $@
       ;;
-      "logs:last")
-        docker-compose logs --tail=20 $@
-      ;;
       "logs:tail")
         if [ "$KUNG_FRONTEND" = "noninteractive" ]; then
           echo "not tailing in noninteractive"
         else
-          docker-compose logs --tail=0 -f $@
+          docker-compose logs --tail=${LINES:-30} -f $@
         fi
       ;;
       "run")
