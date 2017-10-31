@@ -147,7 +147,7 @@ case "$command" in
         $0 kontena deploy $@
       ;;
       "events")
-        kontena stack events -t $stack_name
+        kontena stack events -f $stack_name
       ;;
       "deploy")
         $0 build $@
@@ -167,7 +167,7 @@ case "$command" in
           done
         fi
 
-        kontena stack events -t $stack_name &
+        kontena stack events -f $stack_name &
         stack_events_pid=$!
 
         wait $deploy_pid $service_deploy_pids
@@ -178,7 +178,7 @@ case "$command" in
         $0 kontena logs $@
       ;;
       "logs")
-        [ "$KUNG_FRONTEND" != "noninteractive" ] && log_opts="-t"
+        [ "$KUNG_FRONTEND" != "noninteractive" ] && log_opts="-f"
         if [ "$1" = "" ]; then
           kontena stack logs $log_opts $stack_name
         else
@@ -394,7 +394,6 @@ case "$command" in
   ;;
 
   "logs")
-    $0 compose logs:last $@
     $0 compose logs:tail $@
   ;;
   "build"|"b")
