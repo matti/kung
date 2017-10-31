@@ -130,6 +130,10 @@ case "$command" in
         kontena service ls
       ;;
       "install")
+        set +e
+          $0 kontena volumes:create
+        set -e
+
         kontena stack install --no-deploy -n $stack_name
         $0 kontena deploy $@
       ;;
@@ -190,6 +194,40 @@ case "$command" in
         else
           kontena service logs $stack_name/$1
         fi
+      ;;
+      volumes:*)
+        case $subcommand in
+          volumes:create|volumes:rm) : ;;
+          *) Error "Unknown kontena volumes command" ;;
+        esac
+
+        volumes=$(cat kontena.yml | grep -A9999 '^volumes:' | grep name: | cut -d: -f2 | tr -d ' ')
+
+        for volume in $volumes; do
+          volume_driver_identifier=$(echo $volume | cut -d- -f2)
+          volume_scope_identifier=$(echo $volume | cut -d- -f3)
+          volume_name=$(echo $volume | sed -e 's|${STACK}|'"$stack_name"'|')
+          case $volume_driver_identifier in
+            "l") volume_driver=local ;;
+            *) Error "Unknown volume driver identifier: $volume_driver_identifier in $volume" ;;
+          esac
+
+          case $volume_scope_identifier in
+            "g") volume_scope=grid ;;
+            "s") volume_scope=stack ;;
+            "i") volume_scope=instance ;;
+            *) Error "Unknown volume scope identifier: $volume_scope_identifier in $volume" ;;
+          esac
+
+          case $subcommand in
+            volumes:create)
+              kontena volume create --driver $volume_driver --scope $volume_scope $volume_name
+            ;;
+            volumes:rm)
+              kontena volume rm --force $volume_name
+            ;;
+          esac
+        done
       ;;
       "remove"|"rm")
         kontena stack remove --force $stack_name
