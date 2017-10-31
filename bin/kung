@@ -80,6 +80,35 @@ if [ "$1" = "" ]; then
   Usage
 fi
 
+Envify () {
+  kung_env="$KUNG_ENV"
+  possible_envs=$(ls .kung | xargs echo)
+
+  if [ "$kung_env" = "" ]; then
+    Error "KUNG_ENV not set, needs to be one of: ${possible_envs}"
+  fi
+
+  case "$possible_envs " in
+    *"$kung_env "*) : ;;
+    *)
+      Error "KUNG_ENV '$kung_env' is not one of: ${possible_envs}"
+    ;;
+  esac
+
+  exports=$(ls .kung/$kung_env)
+  for export in $exports; do
+    if [ -z ${!export} ]; then
+      export $export=$(cat .kung/$kung_env/$export)
+    fi
+  done
+}
+
+if [ -d "../.kung" ]; then
+  pushd ".." >/dev/null
+    Envify
+  popd >/dev/null
+fi
+
 command=$1; shift
 case "$command" in
   "kontena"|"k")
