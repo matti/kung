@@ -137,8 +137,12 @@ case "$command" in
         kontena stack install --no-deploy -n $stack_name
         $0 kontena deploy $@
       ;;
-      "upgrade")
+      "upgrade:vars")
         kontena stack upgrade --no-deploy $stack_name
+        $0 kontena deploy $@
+      ;;
+      "upgrade")
+        kontena stack upgrade --values-from-stack $stack_name --no-deploy $stack_name
         echo ""
         $0 kontena deploy $@
       ;;
