@@ -14,7 +14,7 @@ OnExit () {
   fi
 }
 
-trap 'OnExit' EXIT
+trap 'OnExit' INT TERM
 
 DividerPrefix() {
   printf "👑  $@: "
