@@ -434,7 +434,7 @@ case "$command" in
     fi
 
     if [ -f "docker-compose.freeze.yml" ]; then
-      Error "docker-compose.freeze.yml already exists."
+      rm docker-compose.freeze.yml
     fi
 
     echo "version: '2.1'
