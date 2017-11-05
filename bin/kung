@@ -547,6 +547,21 @@ services:
     docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}\t{{.PIDs}}"
   ;;
 
+  "init")
+    if [ -e "docker-compose.yml" ]; then
+      Error "docker-compose.yml already exists"
+    fi
+    echo "version: '2.1'
+
+services:
+  app:
+    build: .
+    image: nopush-app
+  " > docker-compose.yml
+
+    Info "created docker-compose.yml"
+  ;;
+
   "kung:install")
     dir=$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )
     target=/usr/local/bin/kung
