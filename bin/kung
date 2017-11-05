@@ -457,6 +457,7 @@ case "$command" in
     fi
 
     echo "version: '2.1'
+
 services:
   $1:
     entrypoint: '/bin/sh'
