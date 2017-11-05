@@ -374,9 +374,17 @@ case "$command" in
         docker-compose up --remove-orphans -d $@
       ;;
       "up:recreate")
-        compose_opts=""
+        compose_opts="-f docker-compose.yml"
+        if [ -f docker-compose.dev.yml ]; then
+          if [ "$KUNG_MODE" = "production" ]; then
+            Info "KUNG_MODE=production - not loading docker-compose.dev.yml"
+          else
+            compose_opts="$compose_opts -f docker-compose.dev.yml"
+          fi
+        fi
+
         if [ -f docker-compose.freeze.yml ]; then
-          compose_opts="$compose_opts -f docker-compose.freeze.yml -f docker-compose.yml"
+          compose_opts="$compose_opts -f docker-compose.freeze.yml"
         fi
 
         docker-compose $compose_opts up --no-deps --force-recreate -t 0 --remove-orphans -d $@
