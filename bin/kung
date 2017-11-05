@@ -353,7 +353,7 @@ case "$command" in
         esac
 
         if [ -e docker-compose.override.yml ]; then
-          echo "found docker-compose.override.yml, building it"
+          echo "found docker-compose.override.yml, building it first"
           docker-compose -f docker-compose.override.yml build
           echo ""
         fi
