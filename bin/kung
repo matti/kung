@@ -85,6 +85,15 @@ Envify () {
   possible_envs=$(ls .kung | xargs echo)
 
   if [ "$kung_env" = "" ]; then
+    for possible_env in $possible_envs; do
+      if [ "$possible_env" = "default" ]; then
+        kung_env="default"
+        break
+      fi
+    done
+  fi
+
+  if [ "$kung_env" = "" ]; then
     Error "KUNG_ENV not set, needs to be one of: ${possible_envs}"
   fi
 
