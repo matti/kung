@@ -324,6 +324,11 @@ case "$command" in
 
     case "$subcommand" in
       "build"|"build:refresh")
+        if [ ! -e docker-compose.yml ]; then
+          Info "docker-compose.yml not found, not building"
+          exit 0
+        fi
+
         build_opts=""
         case "$subcommand" in
           "build:refresh")
@@ -478,6 +483,11 @@ services:
   ;;
 
   "push")
+    if [ ! -e docker-compose.yml ]; then
+      Info "docker-compose.yml not found, not pushing"
+      exit 0
+    fi
+
     if [ "$1" = "" ]; then
       services=$(docker-compose -f docker-compose.yml config --services)
     else
