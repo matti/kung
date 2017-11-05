@@ -536,7 +536,9 @@ services:
     docker tag "$project"_"$1" "$2"
   ;;
 
-
+  "config")
+    $0 compose config
+  ;;
   "moby:shell")
     docker run --rm -it --privileged --pid=host walkerlee/nsenter -t 1 -m -u -i -n sh
   ;;
