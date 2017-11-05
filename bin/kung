@@ -461,7 +461,14 @@ services:
     rm docker-compose.freeze.yml
   ;;
   "shell")
-    $0 compose run $1 /bin/bash || $0 compose run $1 /bin/sh
+    set +e
+      $0 compose run $1 /bin/bash
+      bash_exit_code=$?
+    set -e
+
+    if [ "$bash_exit_code" = "0" ]; then
+      $0 compose run $1 /bin/sh
+    fi
   ;;
   "enter")
     service=$1
