@@ -393,7 +393,7 @@ case "$command" in
         shift
         cmd=$@
         echo $cmd
-        docker-compose run --entrypoint "$cmd" $service
+        docker-compose run --no-deps --entrypoint "$cmd" $service
       ;;
       "restart")
         docker-compose restart -t 0 $@
