@@ -75,6 +75,9 @@ kontena
 }
 
 project=$(basename $(pwd))
+if [ "$KUNG_MODE" = "" ]; then
+  export KUNG_MODE=dev
+fi
 
 if [ "$1" = "" ]; then
   Usage
@@ -322,7 +325,20 @@ case "$command" in
     subcommand=$1; shift
     DividerSuffix "$subcommand"
 
+    compose_opts="-f docker-compose.yml"
+    if [ -f "docker-compose.$KUNG_MODE.yml" ]; then
+      Info "merging docker-compose.$KUNG_MODE.yml"
+      compose_opts="$compose_opts -f docker-compose.$KUNG_MODE.yml"
+    fi
+
+    if [ -f docker-compose.freeze.yml ]; then
+      compose_opts="$compose_opts -f docker-compose.freeze.yml"
+    fi
+
     case "$subcommand" in
+      "config")
+        docker-compose $compose_opts config
+      ;;
       "build"|"build:refresh")
         if [ ! -e docker-compose.yml ]; then
           Info "docker-compose.yml not found, not building"
@@ -361,47 +377,34 @@ case "$command" in
 
       ;;
       "exec")
-        docker-compose exec $1 $2
+        docker-compose $compose_opts exec $1 $2
       ;;
       "stop")
-        docker-compose stop -t 0 $@
+        docker-compose $compose_opts stop -t 0 $@
       ;;
       "rm")
         $0 compose stop $@
-        docker-compose rm --force $@
+        docker-compose $compose_opts rm --force $@
       ;;
       "up")
-        docker-compose up --remove-orphans -d $@
+        docker-compose $compose_opts up --remove-orphans -d $@
       ;;
       "up:recreate")
-        compose_opts="-f docker-compose.yml"
-        if [ -f docker-compose.dev.yml ]; then
-          if [ "$KUNG_MODE" = "production" ]; then
-            Info "KUNG_MODE=production - not loading docker-compose.dev.yml"
-          else
-            compose_opts="$compose_opts -f docker-compose.dev.yml"
-          fi
-        fi
-
-        if [ -f docker-compose.freeze.yml ]; then
-          compose_opts="$compose_opts -f docker-compose.freeze.yml"
-        fi
-
         docker-compose $compose_opts up --no-deps --force-recreate -t 0 --remove-orphans -d $@
       ;;
       "logs:tail")
         [ "$KUNG_FRONTEND" != "noninteractive" ] && log_opts="-f"
-        docker-compose logs --tail=${LINES:-30} $log_opts $@
+        docker-compose $compose_opts logs --tail=${LINES:-30} $log_opts $@
       ;;
       "run")
         service=$1
         shift
         cmd=$@
         echo $cmd
-        docker-compose run --no-deps --entrypoint "$cmd" $service
+        docker-compose $compose_opts run --no-deps --entrypoint "$cmd" $service
       ;;
       "restart")
-        docker-compose restart -t 0 $@
+        docker-compose $compose_opts restart -t 0 $@
       ;;
       *)
         Error "Unknown: $subcommand"
