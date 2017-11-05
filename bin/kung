@@ -466,7 +466,7 @@ services:
       bash_exit_code=$?
     set -e
 
-    if [ "$bash_exit_code" = "0" ]; then
+    if [ "$bash_exit_code" != 0 ]; then
       $0 compose run $1 /bin/sh
     fi
   ;;
