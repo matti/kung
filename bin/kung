@@ -493,7 +493,7 @@ services:
   ;;
 
   "ps")
-    docker-compose ps | grep Up
+    docker-compose $compose_opts ps | grep Up
   ;;
 
   "buildpush"|"bp")
