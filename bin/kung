@@ -339,6 +339,9 @@ case "$command" in
       "config")
         docker-compose $compose_opts config
       ;;
+      "port")
+        docker-compose $compose_opts port $@
+      ;;
       "build"|"build:refresh")
         if [ ! -e docker-compose.yml ]; then
           Info "docker-compose.yml not found, not building"
@@ -534,6 +537,10 @@ services:
 
   "tag")
     docker tag "$project"_"$1" "$2"
+  ;;
+
+  "port")
+    $0 compose port $@
   ;;
 
   "config")
