@@ -342,7 +342,7 @@ case "$command" in
         docker-compose $compose_opts config
       ;;
       "port")
-        docker-compose $compose_opts port $@
+        docker-compose $compose_opts port $@ | cut -d: -f2
       ;;
       "build"|"build:refresh")
         if [ ! -e docker-compose.yml ]; then
