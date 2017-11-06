@@ -359,16 +359,16 @@ case "$command" in
 
         if [ -e docker-compose.override.yml ]; then
           echoerr "found docker-compose.override.yml, building it first"
-          docker-compose -f docker-compose.override.yml build
+          docker-compose $compose_opts build
           echoerr ""
         fi
 
         if [ "$1" = "" ]; then
-          docker-compose build $build_opts
+          docker-compose $compose_opts build $build_opts
         else
           build_pid_list=""
           for service in $@; do
-            docker-compose build $build_opts $service &
+            docker-compose $compose_opts build $build_opts $service &
             build_pid_list="$build_pid_list $!"
           done
 
