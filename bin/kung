@@ -5,7 +5,7 @@ OnExit () {
   backgrounded_job_pids=$(jobs -p)
   backgrounded_job_pids=$(echo $backgrounded_job_pids) #flatten
   if [ "$backgrounded_job_pids" != "" ]; then
-    echo ""
+    echoerr ""
     Info "killing backgrounded jobs: $backgrounded_job_pids"
     for backgrounded_job_pid in $backgrounded_jobs; do
       ps aux | grep $backgrounded_job_pid
@@ -17,35 +17,37 @@ OnExit () {
 trap 'OnExit' INT TERM
 
 DividerPrefix() {
-  printf "👑  $@: "
+  printf "👑  $@: " 1>&2
 }
 DividerSuffix () {
-  echo "$@
+  echoerr "$@
 "
 }
 
+echoerr () { echo "$@" 1>&2; }
+
 Started () {
-  echo "🚀  $@ ($(date))"
+  echoerr "🚀  $@ ($(date))"
 }
 
 Completed () {
-  echo "🏁  $@ ($(date))"
+  echoerr "🏁  $@ ($(date))"
 }
 
 Info () {
-  echo "ℹ️  $@ ($(date))"
+  echoerr "ℹ️  $@ ($(date))"
 }
 
 Error () {
-  echo "☠️  $@"
+  echoerr "☠️  $@"
   exit 1
 }
 Usage () {
-  echo "👑"
+  echoerr "👑"
 
   case $1 in
     "kontena")
-      echo "
+      echoerr "
 kontena
   install
   upgrade
@@ -155,7 +157,7 @@ case "$command" in
       ;;
       "upgrade")
         kontena stack upgrade --values-from-stack $stack_name --no-deploy $stack_name
-        echo ""
+        echoerr ""
         $0 kontena deploy $@
       ;;
       "events")
@@ -163,14 +165,14 @@ case "$command" in
       ;;
       "deploy")
         $0 build $@
-        echo ""
+        echoerr ""
         $0 push $@
 
         if [ "$1" = "" ]; then
           kontena stack deploy $stack_name >/dev/null &
           deploy_pid=$!
 
-          echo ""; Started "stack deploy started"
+          echoerr ""; Started "stack deploy started"
         else
           service_deploy_pids=""
           for service in $@; do
@@ -183,10 +185,10 @@ case "$command" in
         stack_events_pid=$!
 
         wait $deploy_pid $service_deploy_pids
-        echo ""; Completed "deploy completed"
+        echoerr ""; Completed "deploy completed"
         kill $stack_events_pid
 
-        echo ""
+        echoerr ""
         $0 kontena logs $@
       ;;
       "logs")
@@ -250,7 +252,7 @@ case "$command" in
       ;;
       "restart")
         KUNG_FRONTEND=noninteractive $0 kontena stop "$@"
-        echo ""
+        echoerr ""
         $0 kontena start $@
       ;;
       "stop")
@@ -356,9 +358,9 @@ case "$command" in
         esac
 
         if [ -e docker-compose.override.yml ]; then
-          echo "found docker-compose.override.yml, building it first"
+          echoerr "found docker-compose.override.yml, building it first"
           docker-compose -f docker-compose.override.yml build
-          echo ""
+          echoerr ""
         fi
 
         if [ "$1" = "" ]; then
@@ -403,7 +405,6 @@ case "$command" in
         service=$1
         shift
         cmd=$@
-        echo $cmd
         docker-compose $compose_opts run --no-deps --entrypoint "$cmd" $service
       ;;
       "restart")
@@ -580,9 +581,9 @@ services:
 
     if [ ! -e "$target" ]; then
       ln -s $dir/kung $target
-      echo "Created symlink in $target"
+      echoerr "Created symlink in $target"
     else
-      echo "Already exists in $target"
+      echoerr "Already exists in $target"
       exit 1
     fi
   ;;
@@ -590,7 +591,7 @@ services:
   "kung:edit")
     dir=$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )/kung
     kung_file=$(readlink $dir)
-    echo "Opening $kung_file ..."
+    echoerr "Opening $kung_file ..."
     if [ -n "$EDITOR" ]; then
       $EDITOR $kung_file
     else
