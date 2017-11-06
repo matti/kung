@@ -389,7 +389,11 @@ case "$command" in
       ;;
       "rm")
         $0 compose stop $@
-        docker-compose $compose_opts rm --force $@
+        service_images=$(docker-compose $compose_opts images -q)
+        docker-compose $compose_opts rm --force -v $@
+        for image in $service_images; do
+          docker rmi --force $image
+        done
       ;;
       "up")
         docker-compose $compose_opts up --remove-orphans -d $@
