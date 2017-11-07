@@ -77,9 +77,6 @@ kontena
 }
 
 project=$(basename $(pwd))
-if [ "$KUNG_MODE" = "" ]; then
-  export KUNG_MODE=dev
-fi
 
 if [ "$1" = "" ]; then
   Usage
@@ -102,19 +99,14 @@ Envify () {
     Error "KUNG_ENV not set, needs to be one of: ${possible_envs}"
   fi
 
-  case "$possible_envs " in
-    *"$kung_env "*) : ;;
-    *)
-      Error "KUNG_ENV '$kung_env' is not one of: ${possible_envs}"
-    ;;
-  esac
-
-  exports=$(ls .kung/$kung_env)
-  for export in $exports; do
-    if [ -z ${!export} ]; then
-      export $export=$(cat .kung/$kung_env/$export)
-    fi
-  done
+  if [ -d ".kung/$kung_env" ]; then
+    exports=$(ls .kung/$kung_env)
+    for export in $exports; do
+      if [ -z ${!export} ]; then
+        export $export=$(cat .kung/$kung_env/$export)
+      fi
+    done
+  fi
 }
 
 if [ -d "../.kung" ]; then
@@ -328,9 +320,9 @@ case "$command" in
     DividerSuffix "$subcommand"
 
     compose_opts="-f docker-compose.yml"
-    if [ -f "docker-compose.$KUNG_MODE.yml" ]; then
-      Info "merging docker-compose.$KUNG_MODE.yml"
-      compose_opts="$compose_opts -f docker-compose.$KUNG_MODE.yml"
+    if [ -f "docker-compose.$KUNG_ENV.yml" ]; then
+      Info "merging docker-compose.$KUNG_ENV.yml"
+      compose_opts="$compose_opts -f docker-compose.$KUNG_ENV.yml"
     fi
 
     if [ -f docker-compose.freeze.yml ]; then
