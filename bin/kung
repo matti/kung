@@ -123,52 +123,94 @@ case "$command" in
     DividerSuffix "$subcommand $@"
 
     if [ "$STACK" = "" ]; then
-      stack_name=$(cat kontena.yml | grep "^stack:" | rev | cut -d' ' -f1 | rev | sed 's/\//-/g')
+      if [ -e kontena.yml ]; then
+        stack_name=$(cat kontena.yml| grep "^stack:" | rev | cut -d' ' -f1 | rev | sed 's/\//-/g')
+      else
+        stack_name=""
+      fi
     else
       stack_name=$STACK
     fi
 
     case "$subcommand" in
-      "platform:destroy")
-        echo "stacks"
-        while true; do
-          stacks=$(kontena stack ls -q)
-          [ "$stacks" = "" ] && break
-
-          for stack in $stacks; do
-            kontena stack rm --force $stack
-          done
+      "platform:rm:all")
+        components="nodes stacks services vault volumes certificates trusted-subnets external-registries"
+        for component in $components; do
+          $0 kontena platform:rm $component
         done
-
-        echo "nodes"
+      ;;
+      "platform:rm")
         while true; do
-          nodes=$(kontena node ls -q)
-          [ "$nodes" = "" ] && break
+          case $1 in
+            "vault")
+              secrets=$(kontena vault ls -q)
+              [ "$secrets" = "" ] && break
 
-          for node in $nodes; do
-            kontena node rm --force $node
-          done
-        done
+              for secret in $secrets; do
+                kontena vault rm --force $secret
+              done
+            ;;
+            "certificates")
+              certificates=$(kontena certificate ls -q)
+              [ "$certificates" = "" ] && break
 
-        echo "trusted-subnets"
-        while true; do
-          trusted_subnets=$(kontena grid trusted-subnet ls -q)
-          [ "$trusted_subnets" = "" ] && break
+              for certificate in $certificates; do
+                kontena certificate rm --force $certificate
+              done
+            ;;
+            "stacks")
+              stacks=$(kontena stack ls -q)
+              [ "$stacks" = "" ] && break
 
-          for trusted_subnet in $trusted_subnets; do
-            kontena grid trusted-subnet rm --force $trusted_subnet
-          done
-        done
+              for stack in $stacks; do
+                kontena stack rm --force $stack
+              done
+            ;;
+            "services")
+              services=$(kontena service ls -q)
+              [ "$services" = "" ] && break
 
-        echo "external-registry"
-        while true; do
-          #TODO https://github.com/kontena/kontena/issues/3050
-          external_registries=$(kontena external-registry ls)
-          [ "$external_registries" = "NAME  USERNAME  EMAIL" ] && break
+              for service in $services; do
+                kontena service rm --force $service
+              done
+            ;;
+            "nodes")
+              nodes=$(kontena node ls -q)
+              [ "$nodes" = "" ] && break
 
-          for external_registry in $external_registries; do
-            kontena external-registry rm --force $external_registry
-          done
+              for node in $nodes; do
+                kontena node rm --force $node
+              done
+            ;;
+            "trusted-subnets")
+              trusted_subnets=$(kontena grid trusted-subnet ls -q)
+              [ "$trusted_subnets" = "" ] && break
+
+              for trusted_subnet in $trusted_subnets; do
+                kontena grid trusted-subnet rm --force $trusted_subnet
+              done
+            ;;
+            "external-registries")
+              #TODO https://github.com/kontena/kontena/issues/3050
+              external_registries=$(kontena external-registry ls)
+              [ "$external_registries" = "NAME  USERNAME  EMAIL" ] && break
+
+              for external_registry in $external_registries; do
+                kontena external-registry rm --force $external_registry
+              done
+            ;;
+            "volumes")
+              volumes=$(kontena volume ls -q)
+              [ "$volumes" = "" ] && break
+
+              for volume in $volumes; do
+                kontena volume rm --force $volume
+              done
+            ;;
+            *)
+              Error "Unknown component: $1"
+            ;;
+          esac
         done
       ;;
       "monitor")
