@@ -193,10 +193,11 @@ case "$command" in
             ;;
             "external-registries")
               #TODO https://github.com/kontena/kontena/issues/3050
-              external_registries=$(kontena external-registry ls)
-              [ "$external_registries" = "NAME  USERNAME  EMAIL" ] && break
+              external_registries=$(kontena external-registry ls | tail -n +2)
+              [ "$external_registries" = "" ] && break
 
               for external_registry in $external_registries; do
+                external_registry_only=$(echo $external_registry | cut -d' ' -f1)
                 kontena external-registry rm --force $external_registry
               done
             ;;
