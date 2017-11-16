@@ -147,6 +147,7 @@ case "$command" in
               [ "$secrets" = "" ] && break
 
               for secret in $secrets; do
+                echoerr "removing $secret"
                 kontena vault rm --force $secret
               done
             ;;
