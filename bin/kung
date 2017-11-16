@@ -129,6 +129,48 @@ case "$command" in
     fi
 
     case "$subcommand" in
+      "platform:destroy")
+        echo "stacks"
+        while true; do
+          stacks=$(kontena stack ls -q)
+          [ "$stacks" = "" ] && break
+
+          for stack in $stacks; do
+            kontena stack rm --force $stack
+          done
+        done
+
+        echo "nodes"
+        while true; do
+          nodes=$(kontena node ls -q)
+          [ "$nodes" = "" ] && break
+
+          for node in $nodes; do
+            kontena node rm --force $node
+          done
+        done
+
+        echo "trusted-subnets"
+        while true; do
+          trusted_subnets=$(kontena grid trusted-subnet ls -q)
+          [ "$trusted_subnets" = "" ] && break
+
+          for trusted_subnet in $trusted_subnets; do
+            kontena grid trusted-subnet rm --force $trusted_subnet
+          done
+        done
+
+        echo "external-registry"
+        while true; do
+          #TODO https://github.com/kontena/kontena/issues/3050
+          external_registries=$(kontena external-registry ls)
+          [ "$external_registries" = "NAME  USERNAME  EMAIL" ] && break
+
+          for external_registry in $external_registries; do
+            kontena external-registry rm --force $external_registry
+          done
+        done
+      ;;
       "monitor")
         kontena stack monitor $stack_name
       ;;
