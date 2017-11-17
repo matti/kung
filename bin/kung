@@ -83,37 +83,37 @@ if [ "$1" = "" ]; then
 fi
 
 Envify () {
-  kung_env="$KUNG_ENV"
-  possible_envs=$(ls .kung | xargs echo)
-
-  if [ "$kung_env" = "" ]; then
-    for possible_env in $possible_envs; do
-      if [ "$possible_env" = "default" ]; then
-        kung_env="default"
-        break
-      fi
-    done
+  if [ "$KUNG_ENV" = "" ]; then
+    if [ -L ".kung/default" ]; then
+      export KUNG_ENV=$(readlink -n .kung/default)
+    fi
   fi
 
-  if [ "$kung_env" = "" ]; then
-    Error "KUNG_ENV not set, needs to be one of: ${possible_envs}"
-  fi
+  if [ -d ".kung/$KUNG_ENV" ]; then
+    exports=$(ls .kung/$KUNG_ENV)
 
-  if [ -d ".kung/$kung_env" ]; then
-    exports=$(ls .kung/$kung_env)
     for export in $exports; do
       if [ -z ${!export} ]; then
-        export $export=$(cat .kung/$kung_env/$export)
+        export $export=$(cat .kung/$KUNG_ENV/$export)
       fi
+      echo $export=$(cat .kung/$KUNG_ENV/$export)
     done
   fi
 }
 
-if [ -d "../.kung" ]; then
-  pushd ".." >/dev/null
+FindEnvs () {
+  if [ -d "../.kung" ]; then
+    pushd ".." >/dev/null
+      Envify
+    popd >/dev/null
+  fi
+
+  if [ -d ".kung" ]; then
     Envify
-  popd >/dev/null
-fi
+  fi
+}
+
+FindEnvs >/dev/null
 
 command=$1; shift
 case "$command" in
@@ -577,6 +577,10 @@ services:
 
   "ps")
     docker-compose $compose_opts ps | grep Up
+  ;;
+
+  "env")
+    FindEnvs
   ;;
 
   "buildpush"|"bp")
