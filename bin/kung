@@ -405,7 +405,7 @@ case "$command" in
     subcommand=$1; shift
     DividerSuffix "$subcommand"
 
-    compose_opts="-f docker-compose.yml"
+    compose_opts=""
     if [ -f "docker-compose.$KUNG_ENV.yml" ]; then
       Info "merging docker-compose.$KUNG_ENV.yml"
       compose_opts="$compose_opts -f docker-compose.$KUNG_ENV.yml"
@@ -415,9 +415,11 @@ case "$command" in
       compose_opts="$compose_opts -f docker-compose.freeze.yml"
     fi
 
+    compose_opts="$compose_opts -f docker-compose.yml"
+
     case "$subcommand" in
       "config")
-        docker-compose $compose_opts config
+        docker-compose $compose_opts config $@
       ;;
       "port")
         docker-compose $compose_opts port $@ | cut -d: -f2
@@ -631,7 +633,7 @@ services:
   ;;
 
   "config")
-    $0 compose config
+    $0 compose config $@
   ;;
   "moby:shell")
     docker run --rm -it --privileged --pid=host walkerlee/nsenter -t 1 -m -u -i -n sh
