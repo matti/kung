@@ -407,7 +407,7 @@ case "$command" in
 
     compose_opts=""
     if [ -f "docker-compose.$KUNG_ENV.yml" ]; then
-      Info "merging docker-compose.$KUNG_ENV.yml"
+      Info "Merging docker-compose.$KUNG_ENV.yml"
       compose_opts="$compose_opts -f docker-compose.$KUNG_ENV.yml"
     fi
 
@@ -466,9 +466,16 @@ case "$command" in
         esac
 
         if [ -e docker-compose.override.yml ]; then
-          echoerr "found docker-compose.override.yml, building it first"
-          docker-compose $compose_opts build
+          Info "Found docker-compose.override.yml, building it first"
+          docker-compose $compose_opts build $build_opts
           echoerr ""
+        fi
+
+        if [ "$KUNG_ENV" != "" ] && [ -e docker-compose.$KUNG_ENV.yml ]; then
+          Info "Building plain docker-compose.yml first before docker-compose.$KUNG_ENV.yml"
+          docker-compose -f docker-compose.yml build $build_opts
+          echoerr ""
+          Info "Building docker-compose.$KUNG_ENV.yml"
         fi
 
         if [ "$1" = "" ]; then
