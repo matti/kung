@@ -418,6 +418,34 @@ case "$command" in
     compose_opts="$compose_opts -f docker-compose.yml"
 
     case "$subcommand" in
+      "push")
+        if [ "$1" = "" ]; then
+          services=$(docker-compose $compose_opts config --services)
+        else
+          services=$@
+        fi
+
+        push_pid_list=""
+        for service in $services; do
+          set +e
+            nopush_service_match=$(docker-compose $compose_opts config | grep "image: nopush-$service$")
+          set -e
+
+          if [ "$nopush_service_match" = "" ]; then
+            docker-compose $compose_opts push $service &
+            push_pid_list="$push_pid_list $!"
+          else
+            Info "skipping push for $service"
+          fi
+        done
+
+        for push_pid in $push_pid_list; do
+          if ! wait $push_pid; then
+            kill $push_pid_list 2>/dev/null || :
+            Error "docker push failed"
+          fi
+        done
+      ;;
       "config")
         docker-compose $compose_opts config $@
       ;;
@@ -591,37 +619,7 @@ services:
   ;;
 
   "push"|"p")
-    if [ ! -e docker-compose.yml ]; then
-      Info "docker-compose.yml not found, not pushing"
-      exit 0
-    fi
-
-    if [ "$1" = "" ]; then
-      services=$(docker-compose -f docker-compose.yml config --services)
-    else
-      services=$@
-    fi
-
-    push_pid_list=""
-    for service in $services; do
-      set +e
-        nopush_service_match=$(docker-compose -f docker-compose.yml config | grep "image: nopush-$service$")
-      set -e
-
-      if [ "$nopush_service_match" = "" ]; then
-        docker-compose push $service &
-        push_pid_list="$push_pid_list $!"
-      else
-        Info "skipping push for $service"
-      fi
-    done
-
-    for push_pid in $push_pid_list; do
-      if ! wait $push_pid; then
-        kill $push_pid_list 2>/dev/null || :
-        Error "docker push failed"
-      fi
-    done
+    $0 compose push
   ;;
 
   "tag")
