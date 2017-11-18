@@ -90,14 +90,12 @@ Envify () {
   fi
 
   if [ -d ".kung/$KUNG_ENV" ]; then
-    exports=$(ls .kung/$KUNG_ENV)
-
-    for export in $exports; do
-      if [ -z ${!export} ]; then
-        export $export=$(cat .kung/$KUNG_ENV/$export)
-      fi
-      echo $export=$(cat .kung/$KUNG_ENV/$export)
-    done
+    if [ -e ".kung/$KUNG_ENV/env" ]; then
+      set -o allexport
+        source .kung/$KUNG_ENV/env
+      set +o allexport
+      echoerr "$(cat .kung/$KUNG_ENV/env | grep -v '^#')"
+    fi
   fi
 }
 
@@ -113,7 +111,7 @@ FindEnvs () {
   fi
 }
 
-FindEnvs >/dev/null
+FindEnvs &>/dev/null
 
 command=$1; shift
 case "$command" in
