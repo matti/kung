@@ -38,6 +38,11 @@ Info () {
   echoerr "ℹ️  $@ ($(date))"
 }
 
+Hook () {
+  echoerr "
+🔨  hook: $@ ($(date))"
+}
+
 Error () {
   echoerr "☠️  $@"
   exit 1
@@ -417,6 +422,8 @@ case "$command" in
 
     case "$subcommand" in
       "push")
+        $0 hook pre-push
+
         if [ "$1" = "" ]; then
           services=$(docker-compose $compose_opts config --services)
         else
@@ -443,6 +450,8 @@ case "$command" in
             Error "docker push failed"
           fi
         done
+
+        $0 hook post-push
       ;;
       "config")
         docker-compose $compose_opts config $@
@@ -451,6 +460,8 @@ case "$command" in
         docker-compose $compose_opts port $@ | cut -d: -f2
       ;;
       "build"|"build:refresh")
+        $0 hook pre-build
+
         if [ ! -e docker-compose.yml ]; then
           Info "docker-compose.yml not found, not building"
           exit 0
@@ -493,6 +504,7 @@ case "$command" in
           done
         fi
 
+        $0 hook post-build
       ;;
       "exec")
         docker-compose $compose_opts exec $1 $2
@@ -533,6 +545,12 @@ case "$command" in
     esac
   ;;
 
+  "hook")
+    if [ -e .kung/$KUNG_ENV/hooks/$1 ]; then
+      Hook "$1"
+      .kung/$KUNG_ENV/hooks/$1
+    fi
+  ;;
   "logs")
     $0 compose logs:tail $@
   ;;
