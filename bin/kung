@@ -163,12 +163,17 @@ case "$command" in
               done
             ;;
             "stacks")
-              stacks=$(kontena stack ls -q)
-              [ "$stacks" = "" ] && break
+              while true; do # keep removing all stacks are gone (stack linking prevents rm)
+                stacks=$(kontena stack ls -q);
+                [ "$stacks" = "" ] && break
 
-              for stack in $stacks; do
-                kontena stack rm --force $stack
+                for stack in $stacks; do
+                  set +e
+                    kontena stack rm --force $stack
+                  set -e
+                done
               done
+              break
             ;;
             "services")
               services=$(kontena service ls -q)
