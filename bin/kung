@@ -137,7 +137,7 @@ case "$command" in
 
     case "$subcommand" in
       "platform:rm:all")
-        components="nodes stacks services vault volumes certificates trusted-subnets external-registries"
+        components="nodes stacks services vault volumes certificates trusted-subnets external-registries tokens grid-settings"
         for component in $components; do
           $0 kontena platform:rm $component
         done
@@ -145,6 +145,30 @@ case "$command" in
       "platform:rm")
         while true; do
           case $1 in
+            "grid-settings")
+              grid_name=$(kontena grid current --name)
+
+              kontena grid update --no-default-affinity $grid_name
+              kontena grid update --no-statsd-server $grid_name
+              kontena grid update --log-forwarder none $grid_name
+
+              break
+            ;;
+            "tokens")
+              current_token=$(kontena master token current | grep '\sid\s:' | cut -d':' -f2 | tr -d ' ')
+              tokens=$(kontena master token ls -q)
+              tokens_count=$(echo "$tokens" | wc -l | tr -d ' ')
+
+              [ "$tokens_count" = "1" ] && break
+
+              for token in $tokens; do
+                if [ "$token" = "$current_token" ]; then
+                  continue
+                fi
+                echoerr "removing $token"
+                kontena master token rm --force $token
+              done
+            ;;
             "vault")
               secrets=$(kontena vault ls -q)
               [ "$secrets" = "" ] && break
