@@ -438,6 +438,11 @@ case "$command" in
     DividerSuffix "$subcommand"
 
     compose_opts=""
+
+    if [ -e "docker-compose.override.yml" ]; then
+      compose_opts="-f docker-compose.override.yml"
+    fi
+
     if [ -f "docker-compose.$KUNG_ENV.yml" ]; then
       Info "Merging docker-compose.$KUNG_ENV.yml"
       compose_opts="$compose_opts -f docker-compose.$KUNG_ENV.yml"
