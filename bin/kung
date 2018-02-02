@@ -659,11 +659,12 @@ case "$command" in
   "logs")
     $0 compose logs:tail $@
   ;;
-  "build"|"b")
-    $0 compose build $@
-  ;;
   "pull")
     $0 compose pull $@
+  ;;
+
+  "build"|"b"|"build:refresh")
+    $0 compose $command $@
   ;;
   "rebuild"|"rb")
     $0 compose build $@
