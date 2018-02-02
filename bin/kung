@@ -492,7 +492,7 @@ case "$command" in
       compose_opts="$compose_opts -f docker-compose.freeze.yml"
     fi
 
-    compose_opts="$compose_opts -f docker-compose.yml"
+    compose_opts="-f docker-compose.yml $compose_opts"
 
     case "$subcommand" in
       "push")
