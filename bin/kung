@@ -5,8 +5,8 @@ OnExit () {
   backgrounded_job_pids=$(jobs -p)
   backgrounded_job_pids=$(echo $backgrounded_job_pids) #flatten
   if [ "$backgrounded_job_pids" != "" ]; then
-    echoerr ""
-    Info "killing backgrounded jobs: $backgrounded_job_pids"
+    #echoerr ""
+    #Info "killing backgrounded jobs: $backgrounded_job_pids"
     for backgrounded_job_pid in $backgrounded_jobs; do
       ps aux | grep $backgrounded_job_pid
       kill $backgrounded_job_pid
