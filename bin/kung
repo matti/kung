@@ -643,8 +643,13 @@ case "$command" in
   ;;
 
   "hook")
+    if [ -e .kung/all/hooks/$1 ]; then
+      Hook "all/$1"
+      .kung/all/hooks/$1
+    fi
+
     if [ -e .kung/$KUNG_ENV/hooks/$1 ]; then
-      Hook "$1"
+      Hook "$KUNG_ENV/$1"
       .kung/$KUNG_ENV/hooks/$1
     fi
   ;;
