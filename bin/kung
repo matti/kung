@@ -533,6 +533,9 @@ case "$command" in
       "port")
         docker-compose $compose_opts port $@ | cut -d: -f2
       ;;
+      "pull")
+        docker-compose $compose_opts pull $@
+      ;;
       "build"|"build:refresh")
         $0 hook pre-build
 
@@ -630,6 +633,9 @@ case "$command" in
   ;;
   "build"|"b")
     $0 compose build $@
+  ;;
+  "pull")
+    $0 compose pull $@
   ;;
   "rebuild"|"rb")
     $0 compose build $@
