@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-OnExit () {
+Cleanup () {
   backgrounded_job_pids=$(jobs -p)
   backgrounded_job_pids=$(echo $backgrounded_job_pids) #flatten
   if [ "$backgrounded_job_pids" != "" ]; then
@@ -14,7 +14,10 @@ OnExit () {
   fi
 }
 
-trap 'OnExit' INT TERM
+OnInt () {
+  Info "^C pressed: $@"
+  Cleanup
+}
 
 DividerPrefix() {
   printf "👑  $@: " 1>&2
@@ -117,6 +120,43 @@ FindEnvs () {
 }
 
 FindEnvs &>/dev/null
+
+
+ORIGINAL_ARGS="$@"
+trap 'OnTerm "$ORIGINAL_ARGS"' TERM
+if [ "$KUNG_LOOP" = "true" ]; then
+
+  KUNG_LOOP=false
+
+  command_can_be_looped=false
+  loopable_commands="restart r rb rc enter"
+  for loopable_command in $loopable_commands; do
+    if [ "$1" = "$loopable_command" ]; then
+      command_can_be_looped=true
+      break
+    fi
+  done
+
+  if [ "$command_can_be_looped" = false ]; then
+    Info "Can not loop $1"
+  else
+    Info "Looping: $@"
+    while true; do
+      set +e
+        $0 $@
+      set -e
+      echoerr ""
+      echoerr "restarting, hit ^C again to exit"
+      message=$(echo " kung $@ " | tr ' ' '°')
+
+      printf "%-$(tput cols)s\n" "--[$message]" | tr ' ' - | tr '°' ' '
+      sleep 0.5
+    done
+    exit 0 # will never reach here
+  fi
+fi
+
+trap 'OnInt "$ORIGINAL_ARGS"' INT
 
 command=$1; shift
 case "$command" in
