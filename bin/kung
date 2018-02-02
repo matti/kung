@@ -30,20 +30,20 @@ DividerSuffix () {
 echoerr () { echo "$@" 1>&2; }
 
 Started () {
-  echoerr "🚀  $@ ($(date))"
+  echoerr "🚀  $(date +%H:%M:%S) $@"
 }
 
 Completed () {
-  echoerr "🏁  $@ ($(date))"
+  echoerr "🏁  $(date +%H:%M:%S) $@"
 }
 
 Info () {
-  echoerr "ℹ️  $@ ($(date))"
+  echoerr "ℹ️  $(date +%H:%M:%S) $@"
 }
 
 Hook () {
   echoerr "
-🔨  hook: $@ ($(date))"
+🔨  $(date +%H:%M:%S) hook: $@"
 }
 
 Error () {
