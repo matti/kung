@@ -583,8 +583,28 @@ case "$command" in
 
         $0 hook post-build
       ;;
-      "exec")
-        docker-compose $compose_opts exec $1 $2
+      "enter"|"enter:root")
+        exec_opts=""
+        case "$subcommand" in
+          "enter:root")
+            exec_opts="--user root"
+          ;;
+        esac
+
+        docker-compose $compose_opts exec $exec_opts $1 bash ||
+        docker-compose $compose_opts exec $exec_opts $1 sh
+      ;;
+
+      "exec"|"exec:root")
+        #docker exec -it $(docker-compose ps -q $1) $@
+        exec_opts=""
+        case "$subcommand" in
+          "exec:root")
+            exec_opts="--user root"
+          ;;
+        esac
+
+        docker-compose $compose_opts exec $exec_opts $@
       ;;
       "stop")
         docker-compose $compose_opts stop -t 0 $@
@@ -627,6 +647,9 @@ case "$command" in
       Hook "$1"
       .kung/$KUNG_ENV/hooks/$1
     fi
+  ;;
+  "exec"|"exec:root")
+    $0 compose $command $@
   ;;
   "logs")
     $0 compose logs:tail $@
@@ -698,11 +721,8 @@ services:
       $0 compose run $1 /bin/sh
     fi
   ;;
-  "enter")
-    service=$1
-    shift
-
-    $0 compose exec $service /bin/bash || $0 compose exec $service /bin/sh
+  "enter"|"enter:root")
+    $0 compose $command $@
   ;;
   "attach")
     docker attach --sig-proxy=false "$project"_"$1"_1
