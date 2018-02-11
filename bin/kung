@@ -717,6 +717,7 @@ services:
     $0 compose up:recreate $1
     rm docker-compose.freeze.yml
   ;;
+
   "shell")
     set +e
       $0 compose run $1 /bin/bash
@@ -727,9 +728,11 @@ services:
       $0 compose run $1 /bin/sh
     fi
   ;;
+
   "enter"|"enter:root")
     $0 compose $command $@
   ;;
+
   "attach")
     docker attach --sig-proxy=false "$project"_"$1"_1
   ;;
