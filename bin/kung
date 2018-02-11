@@ -625,7 +625,7 @@ case "$command" in
       ;;
       "logs:tail")
         [ "$KUNG_FRONTEND" != "noninteractive" ] && log_opts="-f"
-        docker-compose $compose_opts logs --tail=${LINES:-30} $log_opts $@
+        docker-compose $compose_opts logs --timestamps --tail=${LINES:-30} $log_opts $@
       ;;
       "run")
         service=$1
