@@ -536,6 +536,9 @@ case "$command" in
       "pull")
         docker-compose $compose_opts pull $@
       ;;
+      "pull:nofail")
+        docker-compose $compose_opts pull --ignore-pull-failures $@
+      ;;
       "build"|"build:refresh")
         $0 hook pre-build
 
@@ -662,8 +665,8 @@ case "$command" in
   "logs")
     $0 compose logs:tail $@
   ;;
-  "pull")
-    $0 compose pull $@
+  "pull"|"pull:nofail")
+    $0 compose $command $@
   ;;
   "build"|"b"|"build:refresh")
     $0 compose $command $@
