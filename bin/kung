@@ -507,7 +507,7 @@ case "$command" in
         push_pid_list=""
         for service in $services; do
           set +e
-            nopush_service_match=$(docker-compose $compose_opts config | grep "image: nopush-$service$")
+            nopush_service_match=$(docker-compose $compose_opts config | grep "image: .*${service}:local$")
           set -e
 
           if [ "$nopush_service_match" = "" ]; then
@@ -609,6 +609,9 @@ case "$command" in
       "stop")
         docker-compose $compose_opts stop -t 0 $@
       ;;
+      "start")
+        docker-compose $compose_opts start $@
+      ;;
       "rm")
         $0 compose stop $@
         service_images=$(docker-compose $compose_opts images -q)
@@ -645,12 +648,12 @@ case "$command" in
   "hook")
     if [ -e .kung/all/hooks/$1 ]; then
       Hook "all/$1"
-      .kung/all/hooks/$1
+      sh -c "set -e; set -x; . .kung/all/hooks/$1"
     fi
 
     if [ -e .kung/$KUNG_ENV/hooks/$1 ]; then
       Hook "$KUNG_ENV/$1"
-      .kung/$KUNG_ENV/hooks/$1
+      sh -c "set -e; set -x; . .kung/$KUNG_ENV/hooks/$1"
     fi
   ;;
   "exec"|"exec:root")
@@ -662,7 +665,6 @@ case "$command" in
   "pull")
     $0 compose pull $@
   ;;
-
   "build"|"b"|"build:refresh")
     $0 compose $command $@
   ;;
@@ -682,8 +684,11 @@ case "$command" in
     $0 compose restart $@
     $0 logs $@
   ;;
-  "stop"|"s")
+  "stop")
     $0 compose stop $@
+  ;;
+  "start")
+    $0 compose start $@
   ;;
   "rm"|"destroy")
     $0 compose rm $@
@@ -729,6 +734,11 @@ services:
     fi
   ;;
 
+  "run")
+    $0 hook pre-run
+    $0 hook run
+    $0 hook post-run
+  ;;
   "enter"|"enter:root")
     $0 compose $command $@
   ;;
@@ -751,7 +761,7 @@ services:
   ;;
 
   "push"|"p")
-    $0 compose push
+    $0 compose push $@
   ;;
 
   "tag")
