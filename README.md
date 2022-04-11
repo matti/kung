@@ -9,7 +9,7 @@ git clone github.com/matti/kung
 ln -s $(pwd)/kung/kung /usr/local/bin
 ```
 
-requires yq, kubectl (asdf install)
+requires yq, envsubst, kubectl (asdf install, brew install )
 
 ## usage
 
