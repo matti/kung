@@ -1,0 +1,15 @@
+# defaults added to all deployments
+spec:
+  template:
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 0
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 0

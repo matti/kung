@@ -1,0 +1,3 @@
+# applied to all ingress.yml files
+spec:
+  ingressClassName: nginx

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+#set -x
+_err() {
+  _echoerr "err: $@"
+  exit 1
+}
+
+_echoerr() {
+  1>&2 echo "$@"
+}
+
+_kinds_filtered() {
+  kinds=""
+  for kind in $(kubectl api-resources --verbs=list,delete -o name); do
+    case $kind in
+      namespaces)
+        continue
+      ;;
+      nodes|events|events.events.k8s.io)
+        continue
+      ;;
+    esac
+    kinds="${kinds}${kind} "
+  done
+
+  echo "$kinds"
+}
+
+subcommand=${1:-}
+case $subcommand in
+  merge)
+    # find leaf directories and walk backwards
+    leafs=$(find $2 -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
+
+    yamls=""
+    for leaf in $leafs; do
+      prefix=$(pwd)
+
+      for resource in $(find $leaf -type f); do
+        name=$(basename $resource)
+        kind=${name%.*}
+        files=""
+
+        cd $leaf
+        while true; do
+          current=$(pwd)
+          [ "$current" = "$prefix" ] && break
+
+          path=${current#"${prefix}/"}
+
+          for f in $(find * -maxdepth 0 -type f -name "*$kind*"); do
+            files="$files $path/$f"
+          done
+          cd ..
+        done
+
+        yq -M ea '. as $item ireduce ({}; . *+ $item )' $files
+      done
+    done
+  ;;
+  apply)
+    timestamp=$(date +%Y-%m-%d-%H-%M-%S)
+    prune=no
+    labels=""
+    opts=${@:2}
+    for opt in $opts; do
+      case $opt in
+        --label=*)
+          label=${opt#*=}
+          labels="$labels $label"
+          shift
+        ;;
+        --prune)
+          prune=yes
+          shift
+        ;;
+      esac
+    done
+    namespace=$2
+    name=$3
+    labels=" \
+      app.kubernetes.io/managed-by=kung \
+      kung/namespace=$namespace \
+      kung/name=$name \
+      kung/at=$timestamp \
+    "
+
+    manifest=""
+    IFS=''
+    while read line; do
+      result=$(echo $line | envsubst)
+      manifest="$manifest
+$result"
+    done
+    IFS=' '
+
+    while true; do
+      >/dev/null kubectl label "namespace/$namespace" --overwrite $labels && break
+      kubectl create namespace "$namespace"
+    done
+
+    printf "$manifest" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
+    printf "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
+
+    if [ "$prune" = "yes" ]; then
+      kubectl delete all \
+        --all-namespaces \
+        -l app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp
+    fi
+  ;;
+  *)
+    _err "?"
+  ;;
+esac

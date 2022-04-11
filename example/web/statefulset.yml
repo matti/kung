@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: web
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      # receives tolerations:, automountServiceAccountToken:, enableServiceLinks: and nodeSelector:
+      containers:
+        - name: web
+          image: nginx
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/index.html
+              name: nginx-conf
+              subPath: index.html
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf

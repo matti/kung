@@ -1,0 +1,6 @@
+# applied to all deployments and statefulsets
+spec:
+  template:
+    spec:
+      nodeSelector:
+        workload: "yes"

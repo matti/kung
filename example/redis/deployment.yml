@@ -1,0 +1,17 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: superdis
+          image: redis
