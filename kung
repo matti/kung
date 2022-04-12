@@ -59,6 +59,14 @@ case $subcommand in
       done
     done
   ;;
+  eval)
+    manifest=""
+    while read line; do
+      manifest="$manifest
+$line"
+    done
+    printf "$manifest" | envsubst
+  ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
     prune=no
@@ -87,13 +95,10 @@ case $subcommand in
     "
 
     manifest=""
-    IFS=''
     while read line; do
-      result=$(echo $line | envsubst)
       manifest="$manifest
-$result"
+$line"
     done
-    IFS=' '
 
     while true; do
       >/dev/null kubectl label "namespace/$namespace" --overwrite $labels && break
