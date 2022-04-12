@@ -30,7 +30,8 @@ subcommand=${1:-}
 case $subcommand in
   merge)
     # find leaf directories and walk backwards
-    leafs=$(find $2 -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
+    cd "$2"
+    leafs=$(find . -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
 
     yamls=""
     for leaf in $leafs; do
@@ -66,7 +67,7 @@ case $subcommand in
 "
     done
 
-    printf "$lines" | envsubst
+    echo "$lines" | envsubst
   ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
