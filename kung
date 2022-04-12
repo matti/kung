@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-#set -x
 _err() {
   _echoerr "err: $@"
   exit 1
@@ -60,12 +59,14 @@ case $subcommand in
     done
   ;;
   eval)
-    manifest=""
+    lines=""
+    IFS=''
     while read line; do
-      manifest="$manifest
-$line"
+      lines="${lines}${line}
+"
     done
-    printf "$manifest" | envsubst
+
+    printf "$lines" | envsubst
   ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
