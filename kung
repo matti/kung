@@ -29,14 +29,19 @@ _kinds_filtered() {
 subcommand=${1:-}
 case $subcommand in
   merge)
-    # find leaf directories and walk backwards
-    cd "$2"
-    leafs=$(find . -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
+    base=$2
+    branch=${3:-.}
+
+    cd "$base"
+    prefix=$(pwd)
+    leafs=$(find $branch -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
+    if [ "$leafs" = "" ]; then
+      leafs="."
+    fi
 
     yamls=""
     for leaf in $leafs; do
-      prefix=$(pwd)
-
+      # find leaf directories and walk backwards
       for resource in $(find $leaf -type f); do
         name=$(basename $resource)
         kind=${name%.*}
@@ -45,16 +50,17 @@ case $subcommand in
         cd $leaf
         while true; do
           current=$(pwd)
+
+          path=${current#"${prefix}"}
+          for f in $(find * -maxdepth 0 -type f -name "*$kind*"); do
+            files="$files ${prefix}${path}/${f}"
+          done
+
           [ "$current" = "$prefix" ] && break
 
-          path=${current#"${prefix}/"}
-
-          for f in $(find * -maxdepth 0 -type f -name "*$kind*"); do
-            files="$files $path/$f"
-          done
           cd ..
         done
-
+        _echoerr "merge: $files"
         yq -M ea '. as $item ireduce ({}; . *+ $item )' $files
       done
     done

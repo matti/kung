@@ -13,6 +13,14 @@ requires yq, envsubst, kubectl
 
 ## usage
 
+merge all files in "example/" root
+
 ```bash
 kung merge example | DOMAIN=example.com kung eval | kung apply --prune mynamespace test
+```
+
+merge only subpath "example/web/" with root "example/"
+
+```
+kung merge example web
 ```
