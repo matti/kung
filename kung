@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
+
 _err() {
   _echoerr "err: $@"
   exit 1
