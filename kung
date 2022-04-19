@@ -74,6 +74,7 @@ case $subcommand in
       lines="${lines}${line}
 "
     done
+    IFS=' '
 
     echo "$lines" | envsubst
   ;;
@@ -111,6 +112,7 @@ case $subcommand in
       manifest="$manifest
 $line"
     done
+    IFS=' '
 
     while true; do
       >/dev/null kubectl label "namespace/$namespace" --overwrite $labels && break
