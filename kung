@@ -10,25 +10,24 @@ _echoerr() {
   1>&2 echo "$@"
 }
 
-_kinds_filtered() {
-  kinds=""
-  for kind in $(kubectl api-resources --verbs=list,delete -o name); do
-    case $kind in
-      namespaces)
-        continue
-      ;;
-      nodes|events|events.events.k8s.io)
-        continue
-      ;;
-    esac
-    kinds="${kinds}${kind} "
-  done
-
-  echo "$kinds"
-}
-
 subcommand=${1:-}
 case $subcommand in
+  kinds)
+    kinds=""
+    for kind in $(kubectl api-resources --verbs=list,delete -o name); do
+      case $kind in
+        namespaces)
+          continue
+        ;;
+        nodes|events|events.events.k8s.io)
+          continue
+        ;;
+      esac
+      kinds="${kinds}${kind} "
+    done
+
+    echo "$kinds"
+  ;;
   merge)
     base=$2
     branch=${3:-.}
@@ -122,7 +121,7 @@ $line"
     printf "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
 
     if [ "$prune" = "yes" ]; then
-      for kind in _kinds_filtered(); do
+      for kind in $0 kinds; do
         _echoerr "delete $kind"
         kubectl delete "$kind" \
           --all-namespaces \
