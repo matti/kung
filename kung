@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-set -x
 
 _err() {
   _echoerr "err: $@"
@@ -123,9 +122,12 @@ $line"
     printf "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
 
     if [ "$prune" = "yes" ]; then
-      kubectl delete all \
-        --all-namespaces \
-        -l app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp
+      for kind in _kinds_filtered; do
+        _echoerr "delete $kind"
+        kubectl delete "$kind" \
+          --all-namespaces \
+          -l app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp
+      done
     fi
   ;;
   *)
