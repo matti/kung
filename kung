@@ -121,7 +121,7 @@ $line"
     printf "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
 
     if [ "$prune" = "yes" ]; then
-      for kind in $0 kinds; do
+      for kind in $($0 kinds); do
         _echoerr "delete $kind"
         kubectl delete "$kind" \
           --all-namespaces \
