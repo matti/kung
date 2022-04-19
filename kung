@@ -135,6 +135,8 @@ $line"
         done
       done
     fi
+
+    wait
   ;;
   *)
     _err "?"
