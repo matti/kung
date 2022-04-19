@@ -122,10 +122,18 @@ $line"
 
     if [ "$prune" = "yes" ]; then
       for kind in $($0 kinds); do
-        _echoerr "delete $kind"
-        kubectl delete "$kind" \
+        (
+          _echoerr "delete"
+          exec kubectl delete "$kind" \
           --all-namespaces \
           -l app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp
+        ) 2>&1 | sed -le "s#^#$kind: #;" &
+
+        while true; do
+          running=$(jobs -pr | wc -l | xargs)
+          [ "$running" -lt 4 ] && break
+          sleep 1
+        done
       done
     fi
   ;;
