@@ -96,6 +96,7 @@ case $subcommand in
     namespace=$2
     name=$3
     labels=" \
+      ${labels} \
       app.kubernetes.io/managed-by=kung \
       kung/namespace=$namespace \
       kung/name=$name \
