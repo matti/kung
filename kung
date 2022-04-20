@@ -52,7 +52,8 @@ case $subcommand in
           current=$(pwd)
 
           path=${current#"${prefix}"}
-          for f in $(find * -maxdepth 0 -type f -name "*$kind*"); do
+          #                                            deployment.              deployment-             -deployment.               -deployment-
+          for f in $(find * -maxdepth 0 -type f -regex "^${kind}\..*" -o -regex "^${kind}-.*" -o -regex ".*-${kind}\..*" -o -regex ".*-${kind}-.*"; do
             files="$files ${prefix}${path}/${f}"
           done
 
