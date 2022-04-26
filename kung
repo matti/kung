@@ -118,8 +118,9 @@ $line"
       kubectl create namespace "$namespace"
     done
 
-    printf "$manifest" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
-    printf "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
+    printf "$manifest\n" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
+    printf "$manifest\n" | kubectl label -n "$namespace" --overwrite $labels -f -
+    printf "$manifest\n" | kubectl rollout restart -n "$namespace" -f -
 
     if [ "$prune" = "yes" ]; then
       for kind in $($0 kinds); do
