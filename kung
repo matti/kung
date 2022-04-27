@@ -2,12 +2,12 @@
 set -euo pipefail
 
 _err() {
-  _echoerr "err: $@"
+  _echoerr "err: $*"
   exit 1
 }
 
 _echoerr() {
-  1>&2 echo "$@"
+  1>&2 echo "$*"
 }
 
 subcommand=${1:-}
@@ -34,16 +34,15 @@ case $subcommand in
 
     cd "$base"
     prefix=$(pwd)
-    leafs=$(find $branch -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
+    leafs=$(find "$branch" -type d | sort -r | awk 'a!~"^"$0{a=$0;print}')
     if [ "$leafs" = "" ]; then
       leafs="."
     fi
 
-    yamls=""
     for leaf in $leafs; do
       # find leaf directories and walk backwards
       for resource in $(find $leaf -type f); do
-        name=$(basename $resource)
+        name=$(basename "$resource")
         kind=${name%.*}
         files=""
 
@@ -81,7 +80,7 @@ case $subcommand in
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
     prune=no
     labels=""
-    opts=${@:2}
+    opts=${*:2}
     for opt in $opts; do
       case $opt in
         --label=*)
@@ -118,17 +117,17 @@ $line"
       kubectl create namespace "$namespace"
     done
 
-    printf "$manifest\n" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
-    printf "$manifest\n" | kubectl label -n "$namespace" --overwrite $labels -f -
+    printf "%s\n" "$manifest" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
+    printf "%s\n" "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
     # || true because errors when something, like service, can not be restarted
-    printf "$manifest\n" | kubectl rollout restart -n "$namespace" -f - || true
+    printf "%s\n" "$manifest" | kubectl rollout restart -n "$namespace" -f - || true
 
     if [ "$prune" = "yes" ]; then
       for kind in $($0 kinds); do
         (
           exec kubectl delete "$kind" \
           --all-namespaces \
-          -l app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp
+          -l "app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp"
         ) 2>&1 | sed -le "s#^#$kind: #;" &
 
         while true; do
