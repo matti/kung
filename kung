@@ -120,7 +120,8 @@ $line"
 
     printf "$manifest\n" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
     printf "$manifest\n" | kubectl label -n "$namespace" --overwrite $labels -f -
-    printf "$manifest\n" | kubectl rollout restart -n "$namespace" -f -
+    # || true because errors when something, like service, can not be restarted
+    printf "$manifest\n" | kubectl rollout restart -n "$namespace" -f - || true
 
     if [ "$prune" = "yes" ]; then
       for kind in $($0 kinds); do
