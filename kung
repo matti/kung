@@ -142,7 +142,7 @@ $line"
     namespace=$2
     name=$3
 
-    for kind in $(0 kinds); do
+    for kind in $($0 kinds); do
       (
         exec kubectl delete "$kind" \
           --all-namespaces \
