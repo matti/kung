@@ -78,7 +78,6 @@ case $subcommand in
   ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
-    prune=no
     labels=""
     opts=${*:2}
     for opt in $opts; do
@@ -86,10 +85,6 @@ case $subcommand in
         --label=*)
           label=${opt#*=}
           labels="$labels $label"
-          shift
-        ;;
-        --prune)
-          prune=yes
           shift
         ;;
       esac
@@ -122,23 +117,44 @@ $line"
     # || true because errors when something, like service, can not be restarted
     printf "%s\n" "$manifest" | kubectl rollout restart -n "$namespace" -f - || true
 
-    if [ "$prune" = "yes" ]; then
-      for kind in $($0 kinds); do
-        (
-          exec kubectl delete "$kind" \
+    wait
+  ;;
+  prune)
+    namespace=$2
+    name=$3
+    timestamp=$4
+
+    for kind in $($0 kinds); do
+      (
+        exec kubectl delete "$kind" \
           --all-namespaces \
           -l "app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp"
-        ) 2>&1 | sed -le "s#^#$kind: #;" &
+      ) 2>&1 | sed -le "s#^#$kind: #;" &
 
-        while true; do
-          running=$(jobs -pr | wc -l | xargs)
-          [ "$running" -lt 8 ] && break
-          sleep 1
-        done
+      while true; do
+        running=$(jobs -pr | wc -l | xargs)
+        [ "$running" -lt 8 ] && break
+        sleep 1
       done
-    fi
+    done
+  ;;
+  delete)
+    namespace=$2
+    name=$3
 
-    wait
+    for kind in $(0 kinds); do
+      (
+        exec kubectl delete "$kind" \
+          --all-namespaces \
+          -l "app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name"
+      ) 2>&1 | sed -le "s#^#$kind: #;" &
+
+      while true; do
+        running=$(jobs -pr | wc -l | xargs)
+        [ "$running" -lt 8 ] && break
+        sleep 1
+      done
+    done
   ;;
   *)
     _err "?"
