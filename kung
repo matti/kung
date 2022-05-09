@@ -1,33 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 _err() {
-  _echoerr "err: $*"
+  _println "err: $*"
   exit 1
 }
 
-_echoerr() {
-  1>&2 echo "$*"
+_println() {
+  1>&2 printf "$*\n"
 }
 
 subcommand=${1:-}
-case $subcommand in
-  kinds)
-    kinds=""
-    for kind in $(kubectl api-resources --verbs=list,delete -o name); do
-      case $kind in
-        namespaces)
-          continue
-        ;;
-        nodes|events|events.events.k8s.io)
-          continue
-        ;;
-      esac
-      kinds="${kinds}${kind} "
-    done
 
-    echo "$kinds"
+handled=yes
+case $subcommand in
+  eval)
+    lines=""
+    IFS=''
+    while read -r line; do
+      lines="${lines}${line}
+"
+    done
+    IFS=' '
+
+    echo "$lines" | envsubst
   ;;
+  all)
+    for configmap in $(kubectl get configmap --no-headers -o custom-columns=":metadata.name" --ignore-not-found -n kung -l "kung/namespace" | sort); do
+      kubectl get configmap -n kung "$configmap"  -o jsonpath="{.data.namespace} {.data.name} {.data.at}"
+      echo ""
+    done
+  ;;
+  all-delete)
+    $0 all | xargs -L1 kung delete
+  ;;
+  *)
+    handled=no
+  ;;
+esac
+[ "$handled" = "yes" ] && exit
+
+handled=yes
+case $subcommand in
   merge)
     base=$2
     branch=${3:-.}
@@ -60,25 +73,28 @@ case $subcommand in
 
           cd ..
         done
-        _echoerr "merge:${files}"
+        _println "merge:${files}"
         yq -M ea '. as $item ireduce ({}; . *+ $item )' $files
       done
     done
   ;;
-  eval)
-    lines=""
-    IFS=''
-    while read line; do
-      lines="${lines}${line}
-"
-    done
-    IFS=' '
+  *)
+    handled="no"
+  ;;
+esac
+[ "$handled" = "yes" ] && exit
 
-    echo "$lines" | envsubst
+namespace=$2
+name=$3
+handled=yes
+case $subcommand in
+  delete-all)
+    $0 revisions "$namespace" "$name" | xargs -L1 "$0" delete "$namespace" "$name"
   ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
     labels=""
+    prune="no"
     opts=${*:2}
     for opt in $opts; do
       case $opt in
@@ -87,10 +103,16 @@ case $subcommand in
           labels="$labels $label"
           shift
         ;;
+        --prune=yes)
+          prune=yes
+          shift
+        ;;
       esac
     done
+
     namespace=$2
     name=$3
+
     labels=" \
       ${labels} \
       app.kubernetes.io/managed-by=kung \
@@ -101,62 +123,97 @@ case $subcommand in
 
     manifest=""
     IFS=''
-    while read line; do
+    while read -r line; do
       manifest="$manifest
 $line"
     done
     IFS=' '
 
-    while true; do
-      >/dev/null kubectl label "namespace/$namespace" --overwrite $labels && break
-      kubectl create namespace "$namespace"
+    kinds=$(printf "%s\n" "$manifest" | yq -e '.kind' -o json | jq -e -r | sort | uniq | xargs)
+    for kind in $kinds; do
+      _println "kind: $kind"
     done
 
-    printf "%s\n" "$manifest" | tee /dev/stderr | kubectl apply -n "$namespace" -f -
+    while true; do
+      >/dev/null kubectl get namespace kung && break
+      kubectl create namespace kung || sleep 1
+    done
+
+    kubectl create configmap -n kung "$namespace-$name-$timestamp" \
+      --from-literal="namespace=$namespace" \
+      --from-literal="name=$name" \
+      --from-literal="at=$timestamp" \
+      --from-literal="kinds=$kinds"
+
+    kubectl label configmap -n kung "$namespace-$name-$timestamp" "kung/namespace=$namespace" "kung/name=$name"
+
+    while true; do
+      >/dev/null kubectl get namespace "$namespace" && break
+      kubectl create namespace "$namespace" || sleep 1
+    done
+
+    printf "%s\n" "$manifest"
+    _println '\napply:'
+    printf "%s\n" "$manifest" | kubectl apply -n "$namespace" -f -
+    _println '\nlabel:'
     printf "%s\n" "$manifest" | kubectl label -n "$namespace" --overwrite $labels -f -
-    # || true because errors when something, like service, can not be restarted
-    printf "%s\n" "$manifest" | kubectl rollout restart -n "$namespace" -f - || true
+    _println "\nrollout restart:"
+    printf "%s\n" "$manifest" | 2>/dev/null kubectl rollout restart -n "$namespace" -f - || true
 
     wait
+
+    if [ "$prune" = "yes" ]; then
+       _println "\nprune:"
+      $0 prune "$namespace" "$name" "$timestamp"
+    fi
   ;;
-  prune)
-    namespace=$2
-    name=$3
-    timestamp=$4
-
-    for kind in $($0 kinds); do
-      (
-        exec kubectl delete "$kind" \
-          --all-namespaces \
-          -l "app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name,kung/at!=$timestamp"
-      ) 2>&1 | sed -le "s#^#$kind: #;" &
-
-      while true; do
-        running=$(jobs -pr | wc -l | xargs)
-        [ "$running" -lt 8 ] && break
-        sleep 1
-      done
-    done
-  ;;
-  delete)
-    namespace=$2
-    name=$3
-
-    for kind in $($0 kinds); do
-      (
-        exec kubectl delete "$kind" \
-          --all-namespaces \
-          -l "app.kubernetes.io/managed-by=kung,kung/namespace=$namespace,kung/name=$name"
-      ) 2>&1 | sed -le "s#^#$kind: #;" &
-
-      while true; do
-        running=$(jobs -pr | wc -l | xargs)
-        [ "$running" -lt 8 ] && break
-        sleep 1
-      done
+  revisions)
+    for configmap in $(kubectl get configmap --no-headers -o custom-columns=":metadata.name" --ignore-not-found -n kung -l "kung/namespace=$namespace,kung/name=$name" | sort); do
+      kubectl get configmap -n kung "$configmap" -o jsonpath="{.data.at}"
+      echo ""
     done
   ;;
   *)
-    _err "?"
+    handled=no
   ;;
 esac
+[ "$handled" = "yes" ] && exit
+
+timestamp=$4
+handled=yes
+case $subcommand in
+  kinds)
+    revision="$namespace-$name-$timestamp"
+    kubectl get configmap -n kung "$revision" -o jsonpath="{.data.kinds}"
+  ;;
+  delete)
+    revision="$namespace-$name-$timestamp"
+    for kind in $($0 kinds "$namespace" "$name" "$timestamp"); do
+      (
+        while true; do
+          kubectl delete "$kind" -n "$namespace" -l "kung/at=$timestamp" --ignore-not-found && break
+          sleep 1
+        done
+       ) 2>&1 | sed -le "s#^#delete kind '$kind': #;" &
+    done
+
+    wait
+
+    while true; do
+      kubectl delete configmap -n kung "$revision" --ignore-not-found && break
+      sleep 1
+    done
+  ;;
+  prune)
+    for revision in $($0 revisions "$namespace" "$name"); do
+      [ "$revision" = "$timestamp" ] && continue
+      $0 delete "$namespace" "$name" "$revision"
+    done
+  ;;
+  *)
+    handled=no
+  ;;
+esac
+[ "$handled" = "yes" ] && exit
+
+_err "?"

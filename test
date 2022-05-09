@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+_fail() {
+  echo "FAIL: $*"
+  exit 1
+}
+
+
+./kung merge example | grep "app: redis" || _fail "redis"
+./kung merge example | grep "app: web" || _fail "web"
+
+./kung merge example | DOMAIN=example.com ./kung eval | grep "host: web.example.com" || _fail "eval"
+
+./kung merge example | DOMAIN=example.com ./kung eval | ./kung apply --label=test=yes kung-test app1
+kubectl get all -n kung-test -l test=yes | grep "statefulset" || _fail "label test=yes not found"
+
+./kung merge example | DOMAIN=example.com ./kung eval | ./kung apply --label=test=ok kung-test app1
+kubectl get all -n kung-test -l test=yes | grep "statefulset" && _fail "label test=yes found"
+
+echo "revisions:"
+./kung revisions kung-test app1
+
+echo "delete-all:"
+./kung delete-all kung-test app1
+
+echo "revisions after delete:"
+./kung revisions kung-test app1
+
+echo "apply without prune:"
+./kung merge example | DOMAIN=example.com ./kung eval | ./kung apply kung-test app1
+
+echo "apply with prune:"
+./kung merge example | DOMAIN=example.com ./kung eval | ./kung apply --prune=yes kung-test app1
+
+echo "revisions after --prune=yes:"
+./kung revisions kung-test app1
+
+echo "kung delete-all:"
+./kung delete-all kung-test app1
+
+echo ""
+echo "DONE"
