@@ -31,7 +31,7 @@ case $subcommand in
     done
   ;;
   all-delete)
-    $0 all | xargs -L1 kung delete
+    $0 all | xargs -r -L1 kung delete
   ;;
   *)
     handled=no
@@ -89,7 +89,7 @@ name=$3
 handled=yes
 case $subcommand in
   delete-all)
-    $0 revisions "$namespace" "$name" | xargs -L1 "$0" delete "$namespace" "$name"
+    $0 revisions "$namespace" "$name" | xargs -r -L1 "$0" delete "$namespace" "$name"
   ;;
   apply)
     timestamp=$(date +%Y-%m-%d-%H-%M-%S)
