@@ -44,6 +44,16 @@ delete all revisions except one
 kung prune mynamespace test 2022-05-09-18-52-03
 ```
 
+get apps deployed in namespace
+```bash
+kung namespace mynamespace
+```
+
+delete all apps deployed in namespace
+```bash
+kung namespace-delete mynamespace
+```
+
 get all apps ever deployed with kung
 ```bash
 kung all

@@ -85,6 +85,23 @@ esac
 [ "$handled" = "yes" ] && exit
 
 namespace=$2
+handled=yes
+case $subcommand in
+  namespace)
+    for configmap in $(kubectl get configmap --no-headers -o custom-columns=":metadata.name" --ignore-not-found -n kung -l "kung/namespace=$namespace" | sort); do
+      kubectl get configmap -n kung "$configmap"  -o jsonpath="{.data.name} {.data.at}"
+      echo ""
+    done
+  ;;
+  namespace-delete)
+    $0 namespace "$namespace" | xargs -r -L1 "$0" delete "$namespace"
+  ;;
+  *)
+    handled=no
+  ;;
+esac
+[ "$handled" = "yes" ] && exit
+
 name=$3
 handled=yes
 case $subcommand in
